@@ -1,0 +1,109 @@
+#!/bin/bash
+
+unset ISO
+unset CHROOTDIR
+MODE="FULL"
+
+MNTDIR=`mktemp -d -t`
+MODEFILE=`mktemp -t`
+
+cleanup()
+{
+	umount -f $MNTDIR 2> /dev/null
+	rmdir $MNTDIR 2> /dev/null
+	rm -rf $MODEFILE
+}
+
+error()
+{
+	echo "ERROR: $1" >&2
+	cleanup
+	exit 1
+}
+
+# Parse command line args
+while getopts  ":hd:i:" flag
+do
+	# if switch is unknown or if asking for help
+	if [ $flag = "?" ] || [ $flag = "h" ]; then
+		help_msg
+		exit 1
+	fi
+	if [ $flag = "d" ]; then
+		if [ -d $OPTARG ]; then
+			numfiles=`ls -A $OPTARG | wc -l`
+			if [ $numfiles -eq 0 ]; then
+				CHROOTDIR=$OPTARG
+			else
+				error "$OPTARG is not empty"
+			fi
+		else
+			error "$OPTARG is not a directory"
+		fi
+	fi
+	if [ $flag = "i" ]; then
+		if [ -f $OPTARG ]; then
+			echo $OPTARG | grep -q "\.iso$"
+			retval=$?
+			if [ $retval -eq 0 ]; then
+				ISO=$OPTARG
+			else
+				error "$OPTARG is not an .iso file"
+			fi
+		else
+			error "$OPTARG is not an file"
+		fi
+	fi
+done
+
+# Check if both chroot dir and iso are specified
+if [ -z $CHROOTDIR ] && [ -z $ISO ]; then
+	error "You need to specify the chroot directory and the iso to use"
+fi
+
+# Check for superuser
+if [ "$UID" != "0" ]; then
+	error "You don't have super powers!"
+fi
+
+# loop-mount the iso
+mount -o loop $ISO $MNTDIR
+
+if [ ! -d $MNTDIR/salix ]; then
+	error "The iso file is not a Salix iso"
+fi
+
+# Select installation mode
+dialog --title "SELECT INSTALLATION MODE" \
+--no-cancel --menu \
+"Please select the installation mode for the chroot" \
+12 70 3 \
+"FULL" "Install everything" \
+"BASIC" "Install a minimal graphical environment" \
+"CORE" "Install a minimal console system" 2> $MODEFILE
+MODE=`cat $MODEFILE`
+
+if [ "$MODE" = "FULL" ]; then
+	INSTALLDIRS="core basic full settings"
+elif [ "$MODE" = "BASIC" ]; then
+	INSTALLDIRS="core basic settings"
+else
+	INSTALLDIRS="core settings"
+fi
+
+# Install packages
+# we don't need to install the kernel packages
+for d in $INSTALLDIRS; do
+	spkg -i --root=$CHROOTDIR --no-ldconfig --no-gtk-update-icon-cache \
+		$MNTDIR/salix/$d/*.t[gx]z
+done
+
+# set default language to en_US
+chroot $CHROOTDIR localesetup en_US.utf8
+
+# update gtk/pango caches and other stuff
+# (pango won't work with 32bit chroots in 64bit hosts, so you'll still
+# have to run this manually after installation)
+chroot $CHROOTDIR /usr/sbin/update-all
+
+cleanup
