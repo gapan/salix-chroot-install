@@ -61,7 +61,7 @@ do
 				error "$OPTARG is not an .iso file"
 			fi
 		else
-			error "$OPTARG is not an file"
+			error "$OPTARG is not a file"
 		fi
 	fi
 done
