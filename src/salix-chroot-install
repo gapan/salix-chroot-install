@@ -14,6 +14,16 @@ cleanup()
 	rm -rf $MODEFILE
 }
 
+help_msg()
+{
+	echo "USAGE: salix-chroot-install -d [DESTDIR] -i [ISO]"
+	echo ""
+	echo "OPTIONS:"
+	echo "   -d,  Path to the chroot destination directory"
+	echo "   -i,  Path to a Salix iso"
+	echo "   -h,  This help message"
+}
+
 error()
 {
 	echo "ERROR: $1" >&2
