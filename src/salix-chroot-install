@@ -111,9 +111,16 @@ done
 # set default language to en_US
 chroot $CHROOTDIR localesetup en_US.utf8
 
+# determine if we're installing a 32bit or a 64bit system
+BITS=$(chroot $CHROOTDIR getconf LONG_BIT)
+if [ $BITS -eq 32 ] && \
+	[ -f $CHROOTDIR/usr/bin/update-pango-querymodules ]; then
+	sed -i \
+		's/^host=$(uname -m)-slackware-linux$/host=i686-slackware-linux/' \
+		$CHROOTDIR/usr/bin/update-pango-querymodules
+fi
+
 # update gtk/pango caches and other stuff
-# (pango won't work with 32bit chroots in 64bit hosts, so you'll still
-# have to run this manually after installation)
 chroot $CHROOTDIR /usr/sbin/update-all
 
 cleanup
