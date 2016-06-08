@@ -94,18 +94,20 @@ dialog --title "SELECT INSTALLATION MODE" \
 MODE=`cat $MODEFILE`
 
 if [ "$MODE" = "FULL" ]; then
-	INSTALLDIRS="core basic full settings"
+	INSTALLDIRS="aaa core basic full settings"
 elif [ "$MODE" = "BASIC" ]; then
-	INSTALLDIRS="core basic settings"
+	INSTALLDIRS="aaa core basic settings"
 else
-	INSTALLDIRS="core settings"
+	INSTALLDIRS="aaa core settings"
 fi
 
 # Install packages
 # we don't need to install the kernel packages
 for d in $INSTALLDIRS; do
-	spkg -i --root=$CHROOTDIR --no-ldconfig --no-gtk-update-icon-cache \
-		$MNTDIR/salix/$d/*.t[gx]z
+	if [ -d $MNTDIR/salix/$d ]; then
+		spkg -i --root=$CHROOTDIR --no-ldconfig --no-gtk-update-icon-cache \
+			$MNTDIR/salix/$d/*.t[gx]z
+	fi
 done
 
 # set default language to en_US
