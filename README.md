@@ -88,15 +88,6 @@ multilib. You'll need to add the `-p` switch for that:
 schroot -p -c salix-14.1
 ```
 
-and if you're installing a 32bit chroot in a 64bit host and want to run
-GUI apps, you'll also need to run:
-
-```
-sudo update-all
-```
-
-from within the chroot or fonts will come up as garbage.
-
 You can examine schroot options by taking a look in the man pages that
 come with it.
 
